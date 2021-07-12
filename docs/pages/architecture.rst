@@ -1,53 +1,44 @@
 .. _architecture:
 
-Architecture
+아키텍쳐
 ============
 
-Overview
+개요
 --------
 
-PyUAVCAN is a full-featured implementation of the `UAVCAN protocol stack <https://uavcan.org>`_
-intended for non-embedded, user-facing applications such as GUI software, diagnostic tools,
-automation scripts, prototypes, and various R&D cases.
-It is designed to support **GNU/Linux**, **MS Windows**, and **macOS** as first-class target platforms.
+PyUAVCAN은 `UAVCAN 프로토콜 스택 <https://uavcan.org>`_ 의 전체 기능을 구현하였으며 GUI 소프트웨어, 진단 도구, 자동화 스크립트, 프로토타입, 여러 R&D 연구와 같은 어플리케이션에 적합하다.
+**GNU/Linux**, **MS Windows**와 **macOS** 를 지원하도록 설계하였다.
 
-The reader should understand the basics of UAVCAN and be familiar with
-`asynchronous programming in Python <https://docs.python.org/3/library/asyncio.html>`_
-to read this documentation.
+이 문서를 이해하려면 UAVCAN의 기본에 대한 이해와 `asynchronous programming in Python <https://docs.python.org/3/library/asyncio.html>`_
+를 이해하고 있어야 한다.
 
-The library consists of several loosely coupled submodules,
-each implementing a well-segregated part of the protocol:
+이 라이브러리는 여러 서브 모듈로 구성되어 있으며 각각은 해당 프로토콜을 잘 구분해서 구현되어 있다.:
 
-- :mod:`pyuavcan.dsdl` --- DSDL language support: transcompilation (code generation) and object serialization.
-  This module is a thin wrapper over `Nunavut <https://github.com/UAVCAN/nunavut/>`_.
+- :mod:`pyuavcan.dsdl` --- DSDL 언어 지원: code 생성 및 객체 직렬화
+  이 모듈은 `Nunavut <https://github.com/UAVCAN/nunavut/>`_ 위에 얇은 wrapper이다.
 
-- :mod:`pyuavcan.transport` --- the abstract UAVCAN transport layer model and several
-  concrete transport implementations (UAVCAN/CAN, UAVCAN/UDP, UAVCAN/serial, etc.).
-  This submodule exposes a relatively low-level API where data is represented as serialized blocks of bytes.
-  Users may build custom concrete transports based on this module as well.
-  *Typical applications are not expected to use this API directly.*
+- :mod:`pyuavcan.transport` --- 추상 UAVCAN 트랜스포트 계층 모듈과 여러 구체적인 트랜스포트 구현(UAVCAN/CAN, UAVCAN/UDP, UAVCAN/serial 등)
+  이 서브모듈은 관련 low-level API를 제공하며 데이터는 바이트의 직렬화된 블록으로 표현된다.
+  사용자는 이 모듈을 기반으로 커스텀 트랜스포트 빌드도 가능하다.
+  *일반적인 어플리케이션은 이 API를 직접 사용하는 경우는 드물다.*
 
-- :mod:`pyuavcan.presentation` --- this layer binds the transport layer together with DSDL serialization logic,
-  providing a higher-level object-oriented API.
-  At this layer, data is represented as instances of auto-generated Python classes
-  (code generation is managed by :mod:`pyuavcan.dsdl`).
-  *Typical applications are not expected to use this API directly.*
+- :mod:`pyuavcan.presentation` --- 이 계층은 DSDL 직렬화 로직으로 트랜스포트 계층을 바인드하며 상위-레벨 객체지향 API를 제공한다.
+  이 계층에서 데이터는 자동 생성된 Python 클래스의 인스턴스로 표현된다.(코드 생성은 :mod:`pyuavcan.dsdl`가 관리)
+  *일반적인 어플리케이션은 이 API를 직접 사용하는 경우는 드물다.*
 
-- :mod:`pyuavcan.application` --- the top-level API for the application.
-  The factory :func:`pyuavcan.application.make_node` is the main entry point of the library.
+- :mod:`pyuavcan.application` --- 어플리케이션을 위한 탑-레벨 API.
+  factory :func:`pyuavcan.application.make_node`가 해당 라이브러리의 main entry 지점이다.
 
-- :mod:`pyuavcan.util` --- a loosely organized collection of various utility functions and classes
-  that are used across the library. User applications may benefit from them also.
+- :mod:`pyuavcan.util` --- 해당 라이브러리에서 사용하는 여러 유틸리티 함수와 클래스의 구조화된 집합. 유저 어플리케이션은 이를 이용하면 편리하다.
 
 .. note::
-   In order to use this library the user should at least skim through the API docs for
-   :mod:`pyuavcan.application` and check out the :ref:`demo`.
+   이 라이브러리를 사용하기 위해서 사용자는 :mod:`pyuavcan.application` API 문서와 :ref:`demo`를 훑어보도록 하자.
 
-The overall structure of the library and its mapping onto the UAVCAN protocol is shown on the following diagram:
+라이브러리의 전반적인 구조와 UAVCAN 프로토콜로 매핑은 다음 다이어그램을 참고하자.:
 
 .. image:: /static/arch-non-redundant.svg
 
-The dependency relations of the submodules are as follows:
+서브모듈의 의존 관계는 다음과 같다.:
 
 .. graphviz::
     :caption: Submodule interdependency
@@ -68,8 +59,7 @@ The dependency relations of the submodules are as follows:
         application     -> {dsdl transport presentation util};
     }
 
-Every submodule is imported automatically except the application layer and concrete transport implementation
-submodules --- those must be imported explicitly by the user::
+어플리케이션 계층과 트랜스포트 구현 서브모듈을 제외하고 모든 서브모듈은 자동으로 import된다.  --- 이 두가지 모듈은 사용자가 명시적으로 import해줘야 한다.::
 
     >>> import pyuavcan
     >>> pyuavcan.dsdl.serialize         # OK, the DSDL submodule is auto-imported.
@@ -83,27 +73,22 @@ submodules --- those must be imported explicitly by the user::
     >>> import pyuavcan.application     # Likewise the application layer -- it depends on DSDL generated classes.
 
 
-Transport layer
+트랜스포트 계층
 ---------------
 
-The UAVCAN protocol itself is designed to support different transports such as CAN bus (UAVCAN/CAN),
-UDP/IP (UAVCAN/UDP), raw serial links (UAVCAN/serial), and so on.
-Generally, a real-time safety-critical implementation of UAVCAN would support a limited subset of
-transports defined by the protocol (often just one) in order to reduce the validation & verification efforts.
-PyUAVCAN is different --- it is created for user-facing software rather than reliable deeply embedded systems;
-that is, PyUAVCAN can't be put onboard a vehicle, but it can be put onto the computer of an engineer or a researcher
-building said vehicle to help them implement, understand, validate, verify, and diagnose its onboard network.
-Hence, PyUAVCAN trades off simplicity and constrainedness (desirable for embedded systems)
-for extensibility and repurposeability (desirable for user-facing software).
+UAVCAN 프로토콜 자체는 CAN bus (UAVCAN/CAN),
+UDP/IP (UAVCAN/UDP), raw serial links (UAVCAN/serial) 등과 같은 다른 트랜스포트를 지원하기 위해서 설계되었다.
+일반적으로 실시간 안전이 중요한 UAVCAN의 구현은 유효성 검증 노력을 줄이기 위해서 해당 프로토콜에서 정의한 트랜스포트의 일부 제한된 것들만 지원한다.
+PyUAVCAN은 이런 점이 다르다. -- 신뢰성과 관련 깊은 임베디드 시스템보다는 어플리케이션 SW을 위해 만들어졌다;
+즉 PyUAVCAN은 onboard를 비행체에 둘 수 없지만 엔지니어나 연구용으로 만든 컴퓨터에 넣어서 온보드 네트워크에서 구현, 이해, 유효성 검증, 진단을 하는데 도움을 얻을 수 있다.
+따라서 PyUAVCAN은 확장성과 다양한 용도(어플리케이션에 적합)를 위해서 단순함과 제약 사항(임베디드에 적합)간에 교환이 발생한다.
 
-The library consists of a transport-agnostic core which implements the higher levels of the UAVCAN protocol,
-DSDL code generation, and object serialization.
-The core defines an abstract *transport model* which decouples it from transport-specific logic.
-The main component of the abstract transport model is the interface class :class:`pyuavcan.transport.Transport`,
-accompanied by several auxiliary definitions available in the same module :mod:`pyuavcan.transport`.
+라이브러리는 트랜스포트에 대한 지식없이도 가능한 코어로 구성되어 있다. 이 코어는 UAVCAN 프로토콜, DSDL 코드 생성, 객체 직렬화의 더 높은 레벨을 구현한다.
+core는 추상 *transport model*를 정의한다. 이는 트랜스포트에 종속된 로직과 분리되어 있다.
+추상 트랜스포트 모델의 주요 컴포넌트는 인터페이스 클래스 :class:`pyuavcan.transport.Transport`이며 동일 모듈 :mod:`pyuavcan.transport` 에서 여러 추가적인 정의를 동반할 수 있다.
 
-The concrete transports implemented in the library are contained in nested submodules;
-here is the full list of them:
+라이브러리에서 트랜스포트 구현은 네스티드 서브모듈에 포함되어 있다.;
+전체 목록은 다음과 같다.:
 
 .. computron-injection::
    :filename: synth/transport_summary.py
@@ -113,15 +98,14 @@ here is the full list of them:
     Typical applications are not expected to initialize their transport manually, or to access this module at all.
     Initialization of low-level components is fully managed by :func:`pyuavcan.application.make_node`.
 
-Users can implement their own custom transports by subclassing :class:`pyuavcan.transport.Transport`.
+사용자는 :class:`pyuavcan.transport.Transport`의 서브클래스를 이용하여 커스텀 트랜스포트를 구현할 수 있다.
 
-Whenever the API documentation refers to *monotonic time*, the time system of
-:meth:`asyncio.AbstractEventLoop.time` is implied.
-Per asyncio, it defaults to :func:`time.monotonic`; it is not recommended to change this.
-This principle is valid for all other components of the library.
+API 문서에서 *monotonic time*를 언급하는 경우, :meth:`asyncio.AbstractEventLoop.time`의 time 시스템을 의미한다.
+asyncio 마다 기본적으로 :func:`time.monotonic`를 의미하며 이를 변경하는 것을 추천하지 않는다.
+이런 원칙은 이 라이브러리의 다른 모든 컴포넌트에도 유효하다.
 
 
-Media sub-layers
+Media 서브-계층
 ++++++++++++++++
 
 Typically, a given concrete transport implementation would need to support multiple different lower-level

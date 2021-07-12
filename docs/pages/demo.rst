@@ -1,41 +1,39 @@
 .. _demo:
 
-Demo
+데모
 ====
 
-This section demonstrates how to build `UAVCAN <https://uavcan.org>`_ applications using PyUAVCAN.
-It has been tested against GNU/Linux and Windows; it is also expected to work with any other major OS.
-The document is arranged as follows:
+이 섹션에서 PyUAVCAN을 이용해서 `UAVCAN <https://uavcan.org>`_ 어플리케이션을 빌드하는 방법을 보여준다.
+GNU/Linux와 Windows에서 테스트하였다; 다른 OS에서도 동작되리라 예상한다.
+이 문서는 다음과 같은 순서로 구성되어 있다.:
 
-- In the first section we introduce a couple of custom data types to illustrate how they can be dealt with.
+- 첫번째 섹션에서 2개 커스텀 데이터 타입을 소개하고 어떻게 처리되는지 본다.
 
-- The second section shows a simple demo node that implements a temperature controller
-  and provides a custom RPC-service.
+- 두번째 섹션에서 온도 제어기를 구현과 커스텀 RPC-서비스를 제공하는 간단한 데모 노드를 보여준다.
 
-- The third section provides a hands-on illustration of the data distribution functionality of UAVCAN with the help
-  of Yakut --- a command-line utility for diagnostics and debugging of UAVCAN networks.
+- 세번째 섹션에서 Yakut를 이용해서 UAVCAN의 데이터 분산 기능을 보여준다. --- (커맨드라인 유틸리티로 분석과 UAVCAN 네트워크 디버깅에 이용)
 
-- The fourth section adds a second node that simulates the plant whose temperature is controlled by the first one.
+- 네번째 섹션에서 플랜트를 시뮬레이션하는 두번째 노드를 추가하고 온도를 첫번째 노드로 제어한다.
 
-- The last section explains how to perform orchestration and configuration management of UAVCAN networks.
+- 마지막 섹션에서 UAVCAN 네트워크의 동작 및 관리 설정 방법에 대해서 설명한다.
 
-You are expected to be familiar with terms like *UAVCAN node*, *DSDL*, *subject-ID*, *RPC-service*.
-If not, skim through the `UAVCAN Guide <https://uavcan.org/guide>`_ first.
+*UAVCAN node*, *DSDL*, *subject-ID*, *RPC-service*와 같은 용어에 익숙하리라 가정한다.
+만약 익숙하지 않다면 먼저 <https://uavcan.org/guide>`_ 를 훑어보도록 하자.
 
-If you want to follow along, :ref:`install PyUAVCAN <installation>` and switch to a new directory before continuing.
+다음을 따라할려면 :ref:`PyUAVCAN 설치 <installation>`와 계속하기 전에 새로운 디렉토리로 스위치하자.
 
 
-DSDL definitions
+DSDL 정의
 ----------------
 
-Every UAVCAN application depends on the standard DSDL definitions located in the namespace ``uavcan``.
-The standard namespace is part of the *regulated* namespaces maintained by the UAVCAN project.
-Grab your copy from git::
+모든 UAVCAN 어플리케이션은 네임스페이스 ``uavcan``에 위치하는 표준 DSDL 정의를 따른다.
+표준 네임스페이스는 UAVCAN 프로젝트에서 유지하는 *규정된* 네임스페이스 부분이다.
+git에서 복사하기::
 
     git clone https://github.com/UAVCAN/public_regulated_data_types
 
-The demo relies on two vendor-specific data types located in the root namespace ``sirius_cyber_corp``.
-The root namespace directory layout is as follows::
+데모에서는 루트 네임스페이스 ``sirius_cyber_corp``에 위치한 2개 벤더 데이터 타입을 이용한다.
+루트 네임스페이스 디렉토리 레이아웃은 다음과 같다::
 
     sirius_cyber_corp/                              # root namespace directory
         PerformLinearLeastSquaresFit.1.0.uavcan     # service type definition
@@ -54,13 +52,12 @@ file ``sirius_cyber_corp/PointXY.1.0.uavcan``:
    :linenos:
 
 
-First node
+첫번재 노드
 ----------
 
-Copy-paste the source code given below into a file named ``demo_app.py``.
-For the sake of clarity, move the custom DSDL root namespace directory ``sirius_cyber_corp/``
-that we created above into ``custom_data_types/``.
-You should end up with the following directory structure::
+아래 주어진 소스 코드를 복사하여 ``demo_app.py`` 파일 이름에 붙여넣기 한다.
+명확히 하기 위해서 커스텀 DSDL 루트 네임스페이스 디렉토리 ``sirius_cyber_corp/`` 를 위에서 생성한 ``custom_data_types/``로 옮긴다.
+이제 다음과 같은 디렉토리 구조가 된다.::
 
     custom_data_types/
         sirius_cyber_corp/                          # Created in the previous section
@@ -72,24 +69,22 @@ You should end up with the following directory structure::
         ...
     demo_app.py                                     # The thermostat node script
 
-Here comes ``demo_app.py``:
+여기에 ``demo_app.py``가 있다:
 
 .. literalinclude:: /../demo/demo_app.py
    :linenos:
 
-If you just run the script as-is,
-you will notice that it fails with an error referring to some *missing registers*.
+만약 스크립트를 실행한다면,
+*missing registers*에 대한 에러가 나타나게 된다.
 
-As explained in the comments (and --- in great detail --- in the UAVCAN Specification),
-registers are basically named values that keep various configuration parameters of the local UAVCAN node (application).
-Some of these parameters are used by the business logic of the application (e.g., PID gains);
-others are used by the UAVCAN stack (e.g., port-IDs, node-ID, transport configuration, logging, and so on).
-Registers of the latter category are all named with the same prefix ``uavcan.``,
-and their names and semantics are regulated by the Specification to ensure consistency across the ecosystem.
+코멘트에서 설명한 것과 같이( --- 아주 상세하게 --- UAVCAN 스펙에서)
+레지스터는 기본적으로 이름을 갖는 값으로 로컬 UAVCAN 노드의(어플리케이션) 여러 설정 파라미터를 유지하고 있다.
+이런 파라미터의 일부는 어플리케이션의 비지니스 로직에서 사용된다.(예제 PID gains);
+다른 파라미터는 UAVCAN 스택에서 사용된다.(port-IDs, node-ID, 트랜스포트 설정, 로깅 등등)
+후반 카테고리에 있는 레지스터는 모두 동일한 접두어 ``uavcan.`` 이름을 가지고 있고 다른 이름과 의미는 에코시스템의 일관성을 위해서 스펙에서 규정하고 있다.
 
-So the application fails with an error that says that it doesn't know how to reach the UAVCAN network it is supposed
-to be part of because there are no registers to read that information from.
-We can resolve this by passing the correct register values via environment variables:
+따라서 일부 어플리케이션은 정보를 읽어올 수 있는 레지스터가 없기 때문에 UAVCAN 네트워크에 도달할 수 없다는 에러를 발생시킨다.
+환경 변수를 통해서 올바른 레지스터를 전달하면 이를 해결할 수 있다.:
 
 ..  code-block:: sh
 
@@ -103,40 +98,30 @@ We can resolve this by passing the correct register values via environment varia
 
     python demo_app.py                                   # Run the application!
 
-The snippet is valid for sh/bash/zsh; if you are using PowerShell on Windows, replace ``export`` with ``$env:``
-and take values into double quotes.
-Further snippets will not include this remark.
+sh/bash/zsh에서 동작한다.; 만약 Windows에서 PowerShell을 사용하는 경우에는 ``export`` 를 ``$env:``로 바꾸고 값을 따옴표 처리한다.
 
-An environment variable ``UAVCAN__SUB__TEMPERATURE_SETPOINT__ID`` sets register ``uavcan.sub.temperature_setpoint.id``,
-and so on.
+``UAVCAN__SUB__TEMPERATURE_SETPOINT__ID`` 환경 변수는 ``uavcan.sub.temperature_setpoint.id`` 레지스터를 설정한다.
 
-In PyUAVCAN, registers are normally stored in the *register file*, in our case it's ``my_registers.db``
-(the UAVCAN Specification does not regulate how the registers are to be stored, this is an implementation detail).
-Once you started the application with a specific configuration, it will store the values in the register file,
-so the next time you can run it without passing any environment variables at all.
+PyUAVCAN에서 레지스터는 *register file*에 보통 저장되고 이 경우 ``my_registers.db``에 저장된다.(UAVCAN 스펙은 레지스터들이 어떻게 저장되어야 하는지에 대한 규정하지 않고 상세 구현에 대한 내용이다.)
+일단 특정 설정으로 어플리케이션을 구동시키면 레지스터 파일에 값을 저장하며 다음에는 환경 변수를 전달하지 않고 이를 실행할 수 있다.
 
-The registers of any UAVCAN node are exposed to other network participants via the standard RPC-services
-defined in the standard DSDL namespace ``uavcan.register``.
-This means that other nodes on the network can reconfigure our demo application via UAVCAN directly,
-without the need to resort to any secondary management interfaces.
-This is equally true for software nodes like our demo application and deeply embedded hardware nodes.
+UAVCAN 노드의 레지스터는 표준 DSDL 네임스페이스 ``uavcan.register``에 정의된 표준 RPC-서비스를 통해서 다른 네트워크 참가자에게 노출된다. 다른 관리 인터페이스에 의존하지 않고도 가능하다.
+이는 데모 어플리케이션과 같은 SW 노드와 임베디드 하드웨어 노드에 대해서 동일하다.
 
-When you execute the commands above, you should see the script running.
-Leave it running and move on to the next section.
+위에 명령을 실행하려면 실행되는 스크립트를 보게 된다.
+실행되도록 남겨두고 다음 섹션으로 가보자.
 
 ..  tip:: Just-in-time vs. ahead-of-time DSDL compilation
 
-    The script will transpile the required DSDL namespaces just-in-time at launch.
-    While this approach works for some applications, those that are built for redistribution at large (e.g., via PyPI)
-    may benefit from compiling DSDL ahead-of-time (at build time)
-    and including the compilation outputs into the redistributable package.
-    Ahead-of-time DSDL compilation can be trivially implemented in ``setup.py``:
+    이 스크립트는 요청한 DSDL 네임스페이스를 소스 코드로 바로 변환한다.
+    이런 접근법은 일부 어플리케이션에 적합하지만, 전반적으로 재배포를(예: PyPI를 통해) 위해서 만들어진 경우 DSDL ahead-of-time (빌드할때) 컴파일로부터 오는 장점이 있고 컴파일된 결과를 재배포 패키지로 포함한다.
+    Ahead-of-time DSDL 컴파일은 ``setup.py``에서 구현할 수 있다:
 
     .. literalinclude:: /../demo/setup.py
        :linenos:
 
 
-Poking the node using Yakut
+Yakut를 사용해서 node를 poking하기
 ---------------------------
 
 The demo is running now so we can interact with it and see how it responds.
